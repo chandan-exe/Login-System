@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Face Login System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <a href="/" class="logo-small">🔐 Face Login</a>
+            </div>
+            <div class="header-right">
+                <span id="user-info" class="user-info"></span>
+                <button id="logout-btn" class="btn btn-outline btn-sm">Logout</button>
+            </div>
+        </header>
+
+        <main class="dashboard-main">
+            <div class="dashboard-welcome">
+                <h1>Welcome back, <span id="username-display">User</span>!</h1>
+                <p>Your face recognition dashboard</p>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <h3 id="total-logins">-</h3>
+                        <p>Total Logins</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-content">
+                        <h3 id="last-login">-</h3>
+                        <p>Last Login</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✓</div>
+                    <div class="stat-content">
+                        <h3 id="login-method">-</h3>
+                        <p>Login Method</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance History -->
+            <section class="dashboard-section">
+                <h2>📋 Attendance History</h2>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Login Time</th>
+                                <th>Logout Time</th>
+                                <th>Method</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Admin Link (if admin) -->
+            <div id="admin-section" class="admin-link-section" style="display: none;">
+                <a href="/admin" class="btn btn-primary">🛠️ Open Admin Panel</a>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        let user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        // Check authentication immediately
+        if (!token) {
+            console.log('No token found, redirecting to login');
+            window.location.href = '/login';
+        }
+
+        async function fetchWithAuth(url, options = {}) {
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+
+            try {
+                const response = await fetch(url, options);
+
+                // Only redirect on 401 if we're not already handling errors
+                if (response.status === 401) {
+                    console.log('401 received for', url);
+                    // Don't redirect immediately, let the user see the dashboard with cached data
+                    return { ok: false, status: 401, json: () => Promise.resolve({ success: false, message: 'Session expired' }) };
+                }
+
+                return response;
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+
+        async function loadDashboard() {
+            // Get user info
+            try {
+                const meResponse = await fetchWithAuth('/api/me');
+                const meData = await meResponse.json();
+                if (meData.success) {
+                    user = meData.user;
+                    localStorage.setItem('user', JSON.stringify(user));
+                }
+            } catch (e) { }
+
+            // Update UI
+            document.getElementById('username-display').textContent = user.username || 'User';
+            document.getElementById('user-info').textContent = `${user.username} (${user.role})`;
+
+            if (user.last_login) {
+                document.getElementById('last-login').textContent =
+                    new Date(user.last_login).toLocaleDateString();
+            }
+
+            // Show admin link if admin
+            if (user.role === 'admin') {
+                document.getElementById('admin-section').style.display = 'block';
+            }
+
+            // Load attendance
+            try {
+                const attResponse = await fetchWithAuth('/api/attendance?limit=20');
+                const attData = await attResponse.json();
+
+                if (attData.success) {
+                    document.getElementById('total-logins').textContent = attData.logs.length;
+
+                    const tbody = document.getElementById('attendance-table');
+                    tbody.innerHTML = attData.logs.map(log => `
+                        <tr>
+                            <td>${new Date(log.login_time).toLocaleDateString()}</td>
+                            <td>${new Date(log.login_time).toLocaleTimeString()}</td>
+                            <td>${log.logout_time ? new Date(log.logout_time).toLocaleTimeString() : '-'}</td>
+                            <td><span class="badge badge-${log.login_method}">${log.login_method}</span></td>
+                            <td>${log.face_confidence ? log.face_confidence.toFixed(1) + '%' : '-'}</td>
+                        </tr>
+                    `).join('');
+
+                    if (attData.logs.length > 0) {
+                        document.getElementById('login-method').textContent = attData.logs[0].login_method;
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load attendance:', e);
+            }
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await fetchWithAuth('/api/logout', { method: 'POST' });
+            } catch (e) { }
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        });
+
+        loadDashboard();
+    </script>
+</body>
+
+</html>

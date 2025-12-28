@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Face Login System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="page-header">
+            <a href="/" class="back-link">← Back</a>
+            <h1>🔐 Login</h1>
+        </header>
+
+        <main class="auth-container">
+            <!-- Login Method Tabs -->
+            <div class="auth-tabs">
+                <button class="tab-btn active" data-tab="face">Face Login</button>
+                <button class="tab-btn" data-tab="password">Password Login</button>
+            </div>
+
+            <!-- Face Login Tab -->
+            <div id="face-tab" class="tab-content active">
+                <div class="camera-section">
+                    <div class="camera-container">
+                        <video id="video" autoplay playsinline></video>
+                        <canvas id="canvas" style="display: none;"></canvas>
+                        <div class="camera-overlay">
+                            <div class="face-frame"></div>
+                        </div>
+                        <div id="camera-message" class="camera-message">
+                            Position your face in the frame
+                        </div>
+                    </div>
+
+                    <div class="camera-controls">
+                        <button id="start-camera-btn" class="btn btn-secondary">
+                            📷 Start Camera
+                        </button>
+                        <button id="capture-btn" class="btn btn-primary" disabled>
+                            🔐 Login with Face
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Password Login Tab -->
+            <div id="password-tab" class="tab-content">
+                <form id="password-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="username">Username or Email</label>
+                        <input type="text" id="username" name="username" required
+                            placeholder="Enter your username or email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required placeholder="Enter your password">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full">
+                        Login
+                    </button>
+                </form>
+            </div>
+
+            <!-- Status Messages -->
+            <div id="status-container" class="status-container"></div>
+
+            <!-- Link to Register -->
+            <p class="auth-link">
+                Don't have an account? <a href="/register">Register here</a>
+            </p>
+        </main>
+    </div>
+
+    <script src="/static/js/camera.js"></script>
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab + '-tab').classList.add('active');
+            });
+        });
+
+        // Status display
+        function showStatus(message, type = 'info') {
+            const container = document.getElementById('status-container');
+            container.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // Face Login
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startCameraBtn = document.getElementById('start-camera-btn');
+        const captureBtn = document.getElementById('capture-btn');
+        let stream = null;
+
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 640, height: 480 }
+                });
+                video.srcObject = stream;
+                startCameraBtn.style.display = 'none';
+                captureBtn.disabled = false;
+                showStatus('Camera ready. Position your face and click Login.', 'success');
+            } catch (err) {
+                showStatus('Camera access denied: ' + err.message, 'error');
+            }
+        });
+
+        captureBtn.addEventListener('click', async () => {
+            if (!stream) return;
+
+            showStatus('Capturing and processing...', 'info');
+            captureBtn.disabled = true;
+
+            // Capture frame
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            const imageData = canvas.toDataURL('image/jpeg', 0.9);
+
+            try {
+                const response = await fetch('/api/login/face', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ face_image: imageData })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    showStatus(`Welcome, ${data.user.username}! Confidence: ${data.confidence.toFixed(1)}%`, 'success');
+                    setTimeout(() => window.location.href = '/dashboard', 1500);
+                } else {
+                    showStatus(data.message, 'error');
+                    captureBtn.disabled = false;
+                }
+            } catch (err) {
+                showStatus('Login failed: ' + err.message, 'error');
+                captureBtn.disabled = false;
+            }
+        });
+
+        // Password Login
+        document.getElementById('password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            showStatus('Logging in...', 'info');
+
+            try {
+                const response = await fetch('/api/login/password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    showStatus(`Welcome, ${data.user.username}!`, 'success');
+                    setTimeout(() => window.location.href = '/dashboard', 1000);
+                } else {
+                    showStatus(data.message, 'error');
+                }
+            } catch (err) {
+                showStatus('Login failed: ' + err.message, 'error');
+            }
+        });
+
+        // Stop camera on page unload
+        window.addEventListener('beforeunload', () => {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+        });
+    </script>
+</body>
+
+</html>

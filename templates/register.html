@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Face Login System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="page-header">
+            <a href="/" class="back-link">← Back</a>
+            <h1>📝 Register</h1>
+        </header>
+
+        <main class="auth-container">
+            <form id="register-form" class="auth-form">
+                <!-- User Info -->
+                <div class="form-section">
+                    <h3>Account Information</h3>
+
+                    <div class="form-group">
+                        <label for="username">Username *</label>
+                        <input type="text" id="username" name="username" required minlength="2"
+                            placeholder="Choose a username">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required placeholder="your@email.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password (Optional - for password login)</label>
+                        <input type="password" id="password" name="password" placeholder="Create a password (optional)">
+                    </div>
+                </div>
+
+                <!-- Face Capture -->
+                <div class="form-section">
+                    <h3>Face Registration</h3>
+                    <p class="section-desc">Capture your face for biometric authentication</p>
+
+                    <div class="camera-section">
+                        <div class="camera-container small">
+                            <video id="video" autoplay playsinline></video>
+                            <canvas id="canvas" style="display: none;"></canvas>
+                            <div class="camera-overlay">
+                                <div class="face-frame"></div>
+                            </div>
+                        </div>
+
+                        <div class="camera-controls">
+                            <button type="button" id="start-camera-btn" class="btn btn-secondary">
+                                📷 Start Camera
+                            </button>
+                            <button type="button" id="capture-btn" class="btn btn-primary" disabled>
+                                📸 Capture Face
+                            </button>
+                        </div>
+
+                        <div id="preview-container" class="preview-container" style="display: none;">
+                            <img id="preview-image" class="preview-image" alt="Captured face">
+                            <button type="button" id="retake-btn" class="btn btn-secondary btn-sm">
+                                🔄 Retake
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn btn-primary btn-full btn-large">
+                    Create Account
+                </button>
+            </form>
+
+            <!-- Status Messages -->
+            <div id="status-container" class="status-container"></div>
+
+            <!-- Link to Login -->
+            <p class="auth-link">
+                Already have an account? <a href="/login">Login here</a>
+            </p>
+        </main>
+    </div>
+
+    <script>
+        let stream = null;
+        let capturedImage = null;
+
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startCameraBtn = document.getElementById('start-camera-btn');
+        const captureBtn = document.getElementById('capture-btn');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+        const retakeBtn = document.getElementById('retake-btn');
+
+        function showStatus(message, type = 'info') {
+            const container = document.getElementById('status-container');
+            container.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 640, height: 480 }
+                });
+                video.srcObject = stream;
+                video.parentElement.style.display = 'block';
+                previewContainer.style.display = 'none';
+                startCameraBtn.style.display = 'none';
+                captureBtn.disabled = false;
+                captureBtn.style.display = 'inline-flex';
+            } catch (err) {
+                showStatus('Camera access denied: ' + err.message, 'error');
+            }
+        });
+
+        captureBtn.addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            capturedImage = canvas.toDataURL('image/jpeg', 0.9);
+
+            previewImage.src = capturedImage;
+            video.parentElement.style.display = 'none';
+            previewContainer.style.display = 'block';
+            captureBtn.style.display = 'none';
+
+            showStatus('Face captured! Review and submit.', 'success');
+        });
+
+        retakeBtn.addEventListener('click', () => {
+            capturedImage = null;
+            previewContainer.style.display = 'none';
+            video.parentElement.style.display = 'block';
+            captureBtn.style.display = 'inline-flex';
+        });
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!capturedImage) {
+                showStatus('Please capture your face first', 'error');
+                return;
+            }
+
+            showStatus('Registering...', 'info');
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        email,
+                        password,
+                        face_image: capturedImage
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus('Registration successful! Redirecting to login...', 'success');
+                    setTimeout(() => window.location.href = '/login', 2000);
+                } else {
+                    showStatus(data.message, 'error');
+                }
+            } catch (err) {
+                showStatus('Registration failed: ' + err.message, 'error');
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+        });
+    </script>
+</body>
+
+</html>

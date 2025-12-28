@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Login System</title>
+    <meta name="description" content="Secure face recognition authentication system">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Hero Section -->
+        <header class="hero">
+            <div class="hero-content">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+                            <circle cx="9" cy="10" r="1.5" />
+                            <circle cx="15" cy="10" r="1.5" />
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                        </svg>
+                    </div>
+                    <h1>Face Login System</h1>
+                </div>
+                <p class="hero-tagline">Secure authentication powered by AI face recognition</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="feature-cards">
+                <a href="/login" class="feature-card login-card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                    </div>
+                    <h2>Login</h2>
+                    <p>Authenticate with your face or password</p>
+                    <span class="card-arrow">→</span>
+                </a>
+
+                <a href="/register" class="feature-card register-card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M19 8v6M22 11h-6" />
+                        </svg>
+                    </div>
+                    <h2>Register</h2>
+                    <p>Create a new account with face recognition</p>
+                    <span class="card-arrow">→</span>
+                </a>
+
+                <a href="/dashboard" class="feature-card dashboard-card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="9" />
+                            <rect x="14" y="3" width="7" height="5" />
+                            <rect x="14" y="12" width="7" height="9" />
+                            <rect x="3" y="16" width="7" height="5" />
+                        </svg>
+                    </div>
+                    <h2>Dashboard</h2>
+                    <p>View your attendance and profile</p>
+                    <span class="card-arrow">→</span>
+                </a>
+            </div>
+
+            <!-- Features Section -->
+            <section class="features-section">
+                <h2>Advanced Security Features</h2>
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">🔐</div>
+                        <h3>Face Recognition</h3>
+                        <p>128-dimensional face encoding with 99.38% accuracy</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">👁️</div>
+                        <h3>Liveness Detection</h3>
+                        <p>Anti-spoofing with blink and head movement detection</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📊</div>
+                        <h3>Attendance Tracking</h3>
+                        <p>Automatic login/logout logging with detailed history</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">👤</div>
+                        <h3>Role Management</h3>
+                        <p>Admin and User roles with permission control</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Face Login System &copy; 2024 | Powered by OpenCV + Flask | Made by Chandan Kumar</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/camera.js"></script>
+</body>
+
+</html>
