@@ -250,8 +250,9 @@ def api_login_face():
         # Decode image
         image = decode_base64_image(face_image_b64)
         if image is None:
+            ip, ua = get_client_info()
             log_login_attempt(attempt_type='face', failure_reason='invalid_image', 
-                            *get_client_info())
+                            ip_address=ip, user_agent=ua)
             return jsonify({
                 'success': False,
                 'message': 'Invalid image data'
@@ -262,8 +263,9 @@ def api_login_face():
         if LIVENESS_ENABLED:
             is_live, liveness_score, msg = verify_liveness_api(image)
             if not is_live:
+                ip, ua = get_client_info()
                 log_login_attempt(attempt_type='face', failure_reason='liveness_failed',
-                                *get_client_info())
+                                ip_address=ip, user_agent=ua)
                 return jsonify({
                     'success': False,
                     'message': f'Liveness check failed: {msg}'
@@ -272,8 +274,9 @@ def api_login_face():
         # Detect face
         faces = detect_faces(image)
         if not faces:
+            ip, ua = get_client_info()
             log_login_attempt(attempt_type='face', failure_reason='no_face_detected',
-                            *get_client_info())
+                            ip_address=ip, user_agent=ua)
             return jsonify({
                 'success': False,
                 'message': 'No face detected'
@@ -282,8 +285,9 @@ def api_login_face():
         # Encode face
         encoding = encode_face(image, faces[0])
         if encoding is None:
+            ip, ua = get_client_info()
             log_login_attempt(attempt_type='face', failure_reason='encoding_failed',
-                            *get_client_info())
+                            ip_address=ip, user_agent=ua)
             return jsonify({
                 'success': False,
                 'message': 'Failed to process face'
@@ -302,8 +306,9 @@ def api_login_face():
         )
         
         if username is None:
+            ip, ua = get_client_info()
             log_login_attempt(attempt_type='face', failure_reason='unknown_face',
-                            *get_client_info())
+                            ip_address=ip, user_agent=ua)
             return jsonify({
                 'success': False,
                 'message': 'Face not recognized'
@@ -318,8 +323,9 @@ def api_login_face():
             }), 404
         
         if not user.is_active:
+            ip, ua = get_client_info()
             log_login_attempt(user_id=user.id, attempt_type='face', 
-                            failure_reason='account_disabled', *get_client_info())
+                            failure_reason='account_disabled', ip_address=ip, user_agent=ua)
             return jsonify({
                 'success': False,
                 'message': 'Account is disabled'
