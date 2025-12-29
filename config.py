@@ -21,7 +21,6 @@ USERS_FILE = os.path.join(DATA_DIR, "users.json")
 # MYSQL_DATABASE = "face_login_db"
 
 # SQLAlchemy Database URI
-# SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
 SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'face_login.db')}"
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -44,8 +43,8 @@ DEFAULT_ADMIN_PASSWORD = "admin123"  # Change on first login!
 # =============================================================================
 # Face Recognition Settings
 # =============================================================================
-FACE_RECOGNITION_MODEL = "hog"  # "hog" (faster, CPU) or "cnn" (more accurate, GPU)
-FACE_ENCODING_JITTERS = 3  # More jitters = more accurate but slower
+# FACE_RECOGNITION_MODEL = "hog"  # Removed: Not used in OpenCV-only mode
+# FACE_ENCODING_JITTERS = 3  # Removed: Not used in OpenCV-only mode
 FACE_MATCH_TOLERANCE = 0.5  # Lower = stricter (default is 0.6)
 
 # Registration Settings
