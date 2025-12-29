@@ -38,7 +38,7 @@ python app.py
 ```
 
 ### Access
-- **Web UI**: Access the deployed URL (e.g. `https://your-app.vercel.app`)
+- **Web UI**: [Live Demo](https://login-system--kumarchandan805.replit.app)
 - **CLI Mode**: `python main.py`
 - **Default Admin**: username: `admin`, password: `admin123`
 
